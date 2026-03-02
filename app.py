@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "AeroGuard Backend Running 🚀"
+    return "AeroGuard Running"
 
 if __name__ == "__main__":
     app.run(debug=True)
