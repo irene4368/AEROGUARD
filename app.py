@@ -8,13 +8,13 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
+# ── Home Route ───────────────────────────────────────────
+
 @app.route("/")
 def home():
     return "AeroGuard Backend Running 🚀"
 
-if __name__ == "__main__":
-    app.run(debug=True)
-# ── Models ──────────────────────────────────────────────
+# ── Models ───────────────────────────────────────────────
 
 class Aircraft(db.Model):
     __tablename__ = "aircraft"
@@ -82,6 +82,7 @@ def add_aircraft():
     data = request.get_json()
     if not data or not data.get("model"):
         return jsonify({"error": "model is required"}), 400
+
     a = Aircraft(
         model=data["model"],
         total_flight_hours=data.get("total_flight_hours", 0.0),
@@ -91,27 +92,6 @@ def add_aircraft():
     db.session.add(a)
     db.session.commit()
     return jsonify(a.to_dict()), 201
-
-@app.route("/api/aircraft/<int:aid>", methods=["GET"])
-def get_aircraft(aid):
-    return jsonify(Aircraft.query.get_or_404(aid).to_dict())
-
-@app.route("/api/aircraft/<int:aid>", methods=["PUT"])
-def update_aircraft(aid):
-    a = Aircraft.query.get_or_404(aid)
-    data = request.get_json()
-    for f in ["model", "total_flight_hours", "last_maintenance_hours", "component_wear_score"]:
-        if f in data:
-            setattr(a, f, data[f])
-    db.session.commit()
-    return jsonify(a.to_dict())
-
-@app.route("/api/aircraft/<int:aid>", methods=["DELETE"])
-def delete_aircraft(aid):
-    a = Aircraft.query.get_or_404(aid)
-    db.session.delete(a)
-    db.session.commit()
-    return jsonify({"message": f"Aircraft {aid} deleted"})
 
 # ── Crew Routes ──────────────────────────────────────────
 
@@ -124,6 +104,7 @@ def add_crew():
     data = request.get_json()
     if not data or not data.get("name"):
         return jsonify({"error": "name is required"}), 400
+
     c = Crew(
         name=data["name"],
         hours_last_7_days=data.get("hours_last_7_days", 0.0),
@@ -134,27 +115,6 @@ def add_crew():
     db.session.commit()
     return jsonify(c.to_dict()), 201
 
-@app.route("/api/crew/<int:cid>", methods=["GET"])
-def get_crew(cid):
-    return jsonify(Crew.query.get_or_404(cid).to_dict())
-
-@app.route("/api/crew/<int:cid>", methods=["PUT"])
-def update_crew(cid):
-    c = Crew.query.get_or_404(cid)
-    data = request.get_json()
-    for f in ["name", "hours_last_7_days", "consecutive_days", "last_rest_hours"]:
-        if f in data:
-            setattr(c, f, data[f])
-    db.session.commit()
-    return jsonify(c.to_dict())
-
-@app.route("/api/crew/<int:cid>", methods=["DELETE"])
-def delete_crew(cid):
-    c = Crew.query.get_or_404(cid)
-    db.session.delete(c)
-    db.session.commit()
-    return jsonify({"message": f"Crew {cid} deleted"})
-
 # ── Flight Routes ────────────────────────────────────────
 
 @app.route("/api/flights/", methods=["GET"])
@@ -164,11 +124,14 @@ def list_flights():
 @app.route("/api/flights/", methods=["POST"])
 def log_flight():
     data = request.get_json()
+
     for field in ["aircraft_id", "crew_id", "weather_condition"]:
         if not data or field not in data:
             return jsonify({"error": f"{field} is required"}), 400
+
     Aircraft.query.get_or_404(data["aircraft_id"])
     Crew.query.get_or_404(data["crew_id"])
+
     f = Flight(
         aircraft_id=data["aircraft_id"],
         crew_id=data["crew_id"],
@@ -180,21 +143,7 @@ def log_flight():
     db.session.commit()
     return jsonify(f.to_dict()), 201
 
-@app.route("/api/flights/<int:fid>", methods=["GET"])
-def get_flight(fid):
-    return jsonify(Flight.query.get_or_404(fid).to_dict())
-
-@app.route("/api/flights/<int:fid>", methods=["PUT"])
-def update_flight(fid):
-    f = Flight.query.get_or_404(fid)
-    data = request.get_json()
-    for field in ["weather_condition", "risk_score", "decision"]:
-        if field in data:
-            setattr(f, field, data[field])
-    db.session.commit()
-    return jsonify(f.to_dict())
-
-# ── Run ──────────────────────────────────────────────────
+# ── Run App ──────────────────────────────────────────────
 
 if __name__ == "__main__":
     with app.app_context():
