@@ -27,4 +27,5 @@ Charts: Chart.js
 2. Add crew data
 3. Simulate flight conditions
 4. Risk engine calculates safety score
-5. Dashboard displays flight risk analytics
+5. View all data shows all the entries done and evaluated
+6. Dashboard displays flight risk analytics
