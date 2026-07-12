@@ -1,6 +1,13 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from flask import render_template
+from risk_engine import (
+    calculate_maintenance_risk,
+    calculate_fatigue_score,
+    calculate_weather_impact,
+    calculate_final_decision
+)
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///aviation.db"
@@ -13,6 +20,7 @@ db = SQLAlchemy(app)
 @app.route("/")
 def home():
     return "AeroGuard Backend Running 🚀"
+
 
 # ── Models ───────────────────────────────────────────────
 
@@ -125,23 +133,148 @@ def list_flights():
 def log_flight():
     data = request.get_json()
 
-    for field in ["aircraft_id", "crew_id", "weather_condition"]:
-        if not data or field not in data:
-            return jsonify({"error": f"{field} is required"}), 400
+    aircraft = Aircraft.query.get(data.get("aircraft_id"))
+    crew = Crew.query.get(data.get("crew_id"))
 
-    Aircraft.query.get_or_404(data["aircraft_id"])
-    Crew.query.get_or_404(data["crew_id"])
+    if not aircraft or not crew:
+        return jsonify({"error": "Aircraft or Crew not found"}), 400
 
-    f = Flight(
-        aircraft_id=data["aircraft_id"],
-        crew_id=data["crew_id"],
-        weather_condition=data["weather_condition"],
-        risk_score=data.get("risk_score", 0.0),
-        decision=data.get("decision", "pending"),
+    maintenance_risk = calculate_maintenance_risk(aircraft)
+    fatigue_risk = calculate_fatigue_score(crew)
+    weather_risk = calculate_weather_impact(data.get("weather_condition"))
+
+    alerts = []                                        # ← inside function ✓
+
+    if maintenance_risk > 30:                          # ← inside function ✓
+        alerts.append("Aircraft maintenance overdue")
+    elif maintenance_risk > 15:
+        alerts.append("Aircraft approaching maintenance threshold")
+
+    if fatigue_risk > 30:
+        alerts.append("Crew fatigue critical")
+    elif fatigue_risk > 15:
+        alerts.append("Crew fatigue moderate")
+
+    if weather_risk > 25:
+        alerts.append("Severe weather conditions")
+    elif weather_risk > 10:
+        alerts.append("Moderate weather impact")
+
+    final_score, decision = calculate_final_decision(  # ← inside function ✓
+        maintenance_risk,
+        fatigue_risk,
+        weather_risk
     )
+
+    f = Flight(                                        # ← Flight object was missing!
+        aircraft_id=data.get("aircraft_id"),
+        crew_id=data.get("crew_id"),
+        weather_condition=data.get("weather_condition"),
+        risk_score=final_score,
+        decision=decision,
+    )
+
     db.session.add(f)
     db.session.commit()
-    return jsonify(f.to_dict()), 201
+
+    return jsonify({
+        "maintenance_risk": maintenance_risk,
+        "fatigue_risk": fatigue_risk,
+        "weather_risk": weather_risk,
+        "risk_score": final_score,
+        "decision": decision,
+        "alerts": alerts
+    })
+
+@app.route("/dashboard")
+def dashboard():
+
+    total_aircraft = Aircraft.query.count()
+    total_crew = Crew.query.count()
+    total_flights = Flight.query.count()
+
+    high_risk_flights = Flight.query.filter(Flight.risk_score > 70).count()
+
+    flights = Flight.query.order_by(Flight.id.desc()).limit(10).all()
+
+    risk_scores = [f.risk_score for f in flights]
+    flight_ids = [f.id for f in flights]
+
+    return render_template(
+        "dashboard.html",
+        total_aircraft=total_aircraft,
+        total_crew=total_crew,
+        total_flights=total_flights,
+        high_risk_flights=high_risk_flights,
+        risk_scores=risk_scores,
+        flight_ids=flight_ids
+    )
+
+@app.route("/reset", methods=["POST"])
+def reset_data():
+    Flight.query.delete()
+    Crew.query.delete()
+    Aircraft.query.delete()
+    db.session.commit()
+    return redirect(url_for("dashboard"))
+
+@app.route("/data")
+def view_all_data():
+    aircraft = Aircraft.query.all()
+    crew = Crew.query.all()
+    flights = Flight.query.order_by(Flight.id.desc()).all()
+
+    aircraft_map = {a.id: a.model for a in aircraft}
+    crew_map = {c.id: c.name for c in crew}
+
+    flight_rows = []
+    for f in flights:
+        flight_rows.append({
+            "id": f.id,
+            "aircraft_name": aircraft_map.get(f.aircraft_id, "Unknown"),
+            "crew_name": crew_map.get(f.crew_id, "Unknown"),
+            "weather_condition": f.weather_condition,
+            "risk_score": round(f.risk_score, 2),
+            "decision": f.decision,
+        })
+
+    return render_template(
+        "data.html",
+        aircraft=aircraft,
+        crew=crew,
+        flights=flight_rows
+    )
+
+@app.route("/aircraft")
+def aircraft_page():
+    return render_template("add_aircraft.html")
+
+
+@app.route("/crew")
+def crew_page():
+    return render_template("add_crew.html")
+
+
+@app.route("/simulate", methods=["GET","POST"])
+def simulate():
+
+    aircraft = Aircraft.query.all()
+    crew = Crew.query.all()
+
+    return render_template(
+        "simulate.html",
+        aircraft=aircraft,
+        crew=crew
+    )
+@app.route("/flights")
+def flights():
+
+    flights = Flight.query.order_by(Flight.created_at.desc()).all()
+
+    return render_template(
+        "flights.html",
+        flights=flights
+    )
 
 # ── Run App ──────────────────────────────────────────────
 
@@ -150,3 +283,4 @@ if __name__ == "__main__":
         db.create_all()
         print("✅ Database tables created.")
     app.run(debug=True, port=5000)
+

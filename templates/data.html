@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AeroGuard - All Data</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f6fa;
+            text-align: center;
+            margin: 0;
+        }
+
+        .navbar {
+            background: #1a1a2e;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 14px;
+        }
+
+        .navbar a:hover { text-decoration: underline; }
+
+        h1 { margin-top: 40px; }
+        h2 { margin-top: 50px; color: #1a1a2e; }
+
+        .table-wrap {
+            display: flex;
+            justify-content: center;
+            padding: 0 20px 60px;
+        }
+
+        table {
+            border-collapse: collapse;
+            background: white;
+            width: 100%;
+            max-width: 1100px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: #1a1a2e;
+            color: white;
+            padding: 12px;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f9fafb; }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .badge-high { background: #e74c3c; }
+        .badge-med { background: #f39c12; }
+        .badge-low { background: #2ecc71; }
+
+        .empty {
+            color: #999;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div><b>AeroGuard</b></div>
+    <div>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/aircraft">Add Aircraft</a>
+        <a href="/crew">Add Crew</a>
+        <a href="/simulate">Simulate Flight</a>
+        <a href="/data">View All Data</a>
+    </div>
+</div>
+
+<h1>📋 All Flight Records</h1>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Aircraft</th>
+                <th>Crew</th>
+                <th>Weather</th>
+                <th>Risk Score</th>
+                <th>Decision</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in flights %}
+            <tr>
+                <td>{{ f.id }}</td>
+                <td>{{ f.aircraft_name }}</td>
+                <td>{{ f.crew_name }}</td>
+                <td>{{ f.weather_condition }}</td>
+                <td>{{ f.risk_score }}</td>
+                <td>
+                    {% if f.risk_score > 80 %}
+                        <span class="badge badge-high">{{ f.decision }}</span>
+                    {% elif f.risk_score > 50 %}
+                        <span class="badge badge-med">{{ f.decision }}</span>
+                    {% else %}
+                        <span class="badge badge-low">{{ f.decision }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="empty">No flight records yet. Go simulate a flight first.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

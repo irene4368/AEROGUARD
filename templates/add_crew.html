@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Add Crew</title>
+</head>
+
+<body>
+
+<h2>Add Crew</h2>
+
+<form id="crewForm">
+
+Name<br>
+<input type="text" id="name"><br><br>
+
+Hours Last 7 Days<br>
+<input type="number" id="hours"><br><br>
+
+Consecutive Days<br>
+<input type="number" id="days"><br><br>
+
+Last Rest Hours<br>
+<input type="number" id="rest"><br><br>
+
+<button type="submit">Add Crew</button>
+
+</form>
+
+<script>
+
+document.getElementById("crewForm").onsubmit = async function(e){
+
+e.preventDefault()
+
+await fetch("/api/crew/",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({
+name:document.getElementById("name").value,
+hours_last_7_days:document.getElementById("hours").value,
+consecutive_days:document.getElementById("days").value,
+last_rest_hours:document.getElementById("rest").value
+})
+})
+
+alert("Crew Added")
+
+}
+
+</script>
+
+</body>
+</html>

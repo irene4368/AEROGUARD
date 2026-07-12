@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Flight Simulation</title>
+
+</head>
+
+<body>
+
+<h2>Simulate Flight</h2>
+
+Aircraft<br>
+<select id="aircraft">
+{% for a in aircraft %}
+<option value="{{a.id}}">{{a.model}}</option>
+{% endfor %}
+</select>
+
+<br><br>
+
+Crew<br>
+<select id="crew">
+{% for c in crew %}
+<option value="{{c.id}}">{{c.name}}</option>
+{% endfor %}
+</select>
+
+<br><br>
+
+Weather<br>
+<select id="weather">
+<option>clear</option>
+<option>rain</option>
+<option>storm</option>
+<option>crosswind</option>
+</select>
+
+<br><br>
+
+<button onclick="evaluateFlight()">Evaluate Flight</button>
+
+<div id="result" style="margin-top:20px;font-size:18px;"></div>
+
+<script>
+
+async function evaluateFlight(){
+
+const response = await fetch("/api/flights/",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+aircraft_id:parseInt(document.getElementById("aircraft").value),
+crew_id:parseInt(document.getElementById("crew").value),
+weather_condition:document.getElementById("weather").value
+
+})
+
+})
+
+const data = await response.json()
+
+let alertsHTML = ""
+
+data.alerts.forEach(alert => {
+alertsHTML += "⚠ " + alert + "<br>"
+})
+
+document.getElementById("result").innerHTML =
+
+"Maintenance Risk: " + data.maintenance_risk + "<br>" +
+"Fatigue Risk: " + data.fatigue_risk + "<br>" +
+"Weather Risk: " + data.weather_risk + "<br><br>" +
+
+"<b>Total Risk Score:</b> " + data.risk_score + "<br>" +
+"<b>Decision:</b> " + data.decision + "<br><br>" +
+
+"<b>Alerts:</b><br>" + alertsHTML
+}
+
+</script>

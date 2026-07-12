@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AeroGuard Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f6fa;
+            text-align: center;
+            margin: 0;
+        }
+
+        .navbar {
+            background: #1a1a2e;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 14px;
+        }
+
+        .navbar a:hover { text-decoration: underline; }
+
+        h1 { margin-top: 40px; }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 50px;
+            flex-wrap: wrap;
+            padding: 0 20px;
+        }
+
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            width: 200px;
+            border-radius: 10px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+
+        .card h3 { margin: 0; font-size: 14px; color: #666; }
+        .card h1 { margin: 10px 0 0; font-size: 40px; }
+
+        .chart-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 500px;
+            min-height: 300px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div><b>AeroGuard</b></div>
+    <div>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/aircraft">Add Aircraft</a>
+        <a href="/crew">Add Crew</a>
+        <a href="/simulate">Simulate Flight</a>
+        <a href="/data">View All Data</a>
+    </div>
+</div>
+
+<h1>✈ AeroGuard Aviation Safety Dashboard</h1>
+
+<div class="container">
+
+    <div class="cards">
+        <div class="card">
+            <h3>Total Aircraft</h3>
+            <h1>{{ total_aircraft }}</h1>
+        </div>
+        <div class="card">
+            <h3>Total Crew</h3>
+            <h1>{{ total_crew }}</h1>
+        </div>
+        <div class="card">
+            <h3>Total Flights</h3>
+            <h1>{{ total_flights }}</h1>
+        </div>
+        <div class="card">
+            <h3>High Risk Flights</h3>
+            <h1>{{ high_risk_flights }}</h1>
+        </div>
+    </div>
+
+    <div class="chart-box">
+        <h3>Recent Flight Risk Scores</h3>
+        {% if flight_ids %}
+            <canvas id="riskChart"></canvas>
+            <script>
+                const ctx = document.getElementById('riskChart');
+                const chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: {{ flight_ids | tojson }}.map(id => 'Flight ' + id),
+                        datasets: [{
+                            label: 'Risk Score',
+                            data: {{ risk_scores | tojson }},
+                            backgroundColor: {{ risk_scores | tojson }}.map(s =>
+                                s > 80 ? '#e74c3c' : s > 50 ? '#f39c12' : '#2ecc71'
+                            ),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, max: 100 }
+                        }
+                    }
+                });
+            </script>
+        {% else %}
+            <p style="color:#999; margin-top:80px;">No flights simulated yet.</p>
+        {% endif %}
+    </div>
+
+</div>
+<div style="text-align:center; margin-top:40px; margin-bottom:40px;">
+    <form action="/reset" method="POST" onsubmit="return confirm('This will permanently delete ALL aircraft, crew, and flight data. Are you sure?');">
+        <button type="submit" style="background:#ef4444; color:white; border:none; padding:12px 28px; border-radius:6px; font-size:14px; cursor:pointer; font-weight:bold;">
+            ⚠ Reset All Data
+        </button>
+    </form>
+</div>
+</body>
+</html>

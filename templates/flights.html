@@ -1,0 +1,25 @@
+<h2>Flight History</h2>
+
+<table border="1">
+
+<tr>
+<th>Aircraft</th>
+<th>Crew</th>
+<th>Weather</th>
+<th>Risk Score</th>
+<th>Decision</th>
+</tr>
+
+{% for f in flights %}
+
+<tr>
+<td>{{f.aircraft_id}}</td>
+<td>{{f.crew_id}}</td>
+<td>{{f.weather_condition}}</td>
+<td>{{f.risk_score}}</td>
+<td>{{f.decision}}</td>
+</tr>
+
+{% endfor %}
+
+</table>

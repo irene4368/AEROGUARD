@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Add Aircraft</title>
+</head>
+
+<body>
+
+<h2>Add Aircraft</h2>
+
+<form id="aircraftForm">
+
+Model<br>
+<input type="text" id="model"><br><br>
+
+Total Flight Hours<br>
+<input type="number" id="hours"><br><br>
+
+Last Maintenance Hours<br>
+<input type="number" id="maintenance"><br><br>
+
+Component Wear Score<br>
+<input type="number" id="wear"><br><br>
+
+<button type="submit">Add Aircraft</button>
+
+</form>
+
+<script>
+
+document.getElementById("aircraftForm").onsubmit = async function(e){
+
+e.preventDefault()
+
+await fetch("/api/aircraft/",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({
+model:document.getElementById("model").value,
+total_flight_hours:document.getElementById("hours").value,
+last_maintenance_hours:document.getElementById("maintenance").value,
+component_wear_score:document.getElementById("wear").value
+})
+})
+
+alert("Aircraft Added")
+
+}
+
+</script>
+
+</body>
+</html>
